@@ -27,8 +27,15 @@ jobs:
           tag_pattern_main='^v[0-9]+\.[0-9]+\.[0-9]+$'
           tag_pattern_staging='^v[0-9]+\.[0-9]+\.[0-9]+-alpha$'
 
+          # Get commit SHA for the tag
           commit_sha=$(git rev-list -n 1 "$tag")
-          branch=$(git branch -r --contains "$commit_sha" | sed 's/ *origin\///' | head -n 1)
+
+          # --- Reliable branch detection (works for tag pushes) ---
+          branch="${GITHUB_BASE_REF:-${GITHUB_HEAD_REF:-unknown}}"
+          if [[ "$branch" == "unknown" || -z "$branch" ]]; then
+            # Try to infer from remote branches containing the commit
+            branch=$(git branch -r --contains "$commit_sha" | sed 's/ *origin\///' | head -n 1)
+          fi
 
           echo "🧩 Tag: $tag"
           echo "🔍 Commit: $commit_sha"
